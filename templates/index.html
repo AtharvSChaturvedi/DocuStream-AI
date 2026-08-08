@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocuStream AI &mdash; Research Paper Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- LEFT: catalog drawer -->
+  <aside class="drawer">
+    <div class="drawer-head">
+      <span class="mark">§</span>
+      <div>
+        <h1>DocuStream AI</h1>
+        <p class="tagline">Ask your papers, get cited answers</p>
+      </div>
+    </div>
+
+    <form id="upload-form" class="upload-card">
+      <label for="file-input" class="upload-label">
+        <span class="upload-icon">+</span>
+        <span id="upload-text">Add a paper (PDF)</span>
+      </label>
+      <input id="file-input" type="file" accept="application/pdf" hidden>
+    </form>
+    <div id="upload-status" class="status-line" aria-live="polite"></div>
+
+    <div class="catalog-head">
+      <span>Index</span>
+      <span class="catalog-count" id="paper-count">0</span>
+    </div>
+    <ul id="paper-list" class="catalog-list">
+      <li class="empty-note">No papers indexed yet.</li>
+    </ul>
+
+    <div class="scope-row">
+      <label for="scope-select">Search scope</label>
+      <select id="scope-select">
+        <option value="">All indexed papers</option>
+      </select>
+    </div>
+  </aside>
+
+  <!-- RIGHT: reading / query room -->
+  <main class="room">
+    <div id="thread" class="thread">
+      <div class="intro-note">
+        <span class="fig">01</span>
+        <p>Upload one or more research papers on the left, then ask a
+        question below. Every answer is grounded in the excerpts it
+        retrieves &mdash; and every claim is footnoted back to a page.</p>
+      </div>
+    </div>
+
+    <form id="ask-form" class="ask-bar">
+      <input id="question-input" type="text" placeholder="Ask something about your papers&hellip;" autocomplete="off">
+      <button type="submit" id="ask-button">Ask</button>
+    </form>
+  </main>
+
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
