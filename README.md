@@ -1,4 +1,4 @@
-# Marginal — Research Paper RAG Assistant
+# DocuStream — Research Paper RAG Assistant
 
 Upload academic papers as PDFs, ask questions in plain English, and get
 answers grounded in the papers — with every claim cited back to a source
@@ -84,7 +84,7 @@ vercel --prod
 
 ## Resume line
 
-> **Marginal — Research Paper RAG Assistant** — Python, Flask, Chroma,
+> **DocuStream — Research Paper RAG Assistant** — Python, Flask, Chroma,
 > Gemini, Groq
 > Built a retrieval-augmented QA system over uploaded academic papers with
 > page-level citation grounding; used Gemini embeddings for semantic
