@@ -1,6 +1,11 @@
 """
 Core RAG pipeline for the research-paper assistant.
 
+Every function now takes an `owner_id` - a random ID assigned per browser
+session (see api/index.py). Documents are tagged with it on upload and
+every read is filtered by it, so different visitors never see each
+other's papers even though they share one Chroma collection.
+
 Flow:
   ingest_pdf()      PDF bytes -> pages -> chunks -> Gemini embeddings -> Chroma
   answer_question()  question -> Gemini query embedding -> Chroma top-k ->
@@ -27,9 +32,9 @@ SYSTEM_PROMPT = (
 )
 
 
-def ingest_pdf(file_bytes, filename):
-    """Parses a PDF, embeds its chunks, and stores them in Chroma.
-    Returns a summary dict for the UI."""
+def ingest_pdf(file_bytes, filename, owner_id):
+    """Parses a PDF, embeds its chunks, and stores them in Chroma, tagged
+    with owner_id so only this visitor can retrieve them later."""
     pages = extract_pages(file_bytes)
     chunks = chunk_pages(pages)
     if not chunks:
@@ -44,7 +49,12 @@ def ingest_pdf(file_bytes, filename):
 
     ids = [f"{paper_id}-{i}" for i in range(len(chunks))]
     metadatas = [
-        {"paper_id": paper_id, "title": filename, "page": c["page"]}
+        {
+            "paper_id": paper_id,
+            "title": filename,
+            "page": c["page"],
+            "owner_id": owner_id,
+        }
         for c in chunks
     ]
 
@@ -58,10 +68,10 @@ def ingest_pdf(file_bytes, filename):
     return {"paper_id": paper_id, "title": filename, "chunks": len(chunks)}
 
 
-def list_papers():
-    """Returns the distinct set of papers currently in the collection."""
+def list_papers(owner_id):
+    """Returns the distinct set of papers this owner has uploaded."""
     collection = get_collection()
-    data = collection.get(include=["metadatas"])
+    data = collection.get(where={"owner_id": owner_id}, include=["metadatas"])
     seen = {}
     for meta in data.get("metadatas", []):
         pid = meta.get("paper_id")
@@ -70,12 +80,26 @@ def list_papers():
     return [{"paper_id": pid, "title": title} for pid, title in seen.items()]
 
 
-def answer_question(question, top_k=5, paper_id=None):
-    """Retrieves relevant chunks and asks Groq to answer, grounded and cited."""
+def delete_paper(owner_id, paper_id):
+    """Removes all chunks belonging to one paper, scoped to this owner
+    so you can't delete someone else's document even by guessing an id."""
+    collection = get_collection()
+    collection.delete(
+        where={"$and": [{"owner_id": owner_id}, {"paper_id": paper_id}]}
+    )
+
+
+def answer_question(question, owner_id, top_k=5, paper_id=None):
+    """Retrieves relevant chunks (scoped to this owner) and asks Groq to
+    answer, grounded and cited."""
     collection = get_collection()
     query_embedding = embed_query(question)
 
-    where = {"paper_id": paper_id} if paper_id else None
+    if paper_id:
+        where = {"$and": [{"owner_id": owner_id}, {"paper_id": paper_id}]}
+    else:
+        where = {"owner_id": owner_id}
+
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=top_k,
