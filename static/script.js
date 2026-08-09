@@ -1,5 +1,4 @@
 const fileInput = document.getElementById("file-input");
-const uploadForm = document.getElementById("upload-form");
 const uploadText = document.getElementById("upload-text");
 const uploadStatus = document.getElementById("upload-status");
 const paperList = document.getElementById("paper-list");
@@ -32,8 +31,13 @@ function renderPapers() {
       .map(
         (p) => `
       <li class="paper-card">
-        <div class="p-title">${escapeHtml(p.title)}</div>
-        <div class="p-meta">#${p.paper_id}</div>
+        <div class="p-row">
+          <div>
+            <div class="p-title">${escapeHtml(p.title)}</div>
+            <div class="p-meta">#${p.paper_id}</div>
+          </div>
+          <button class="p-remove" data-paper-id="${p.paper_id}" title="Remove this paper">&times;</button>
+        </div>
       </li>`
       )
       .join("");
@@ -45,8 +49,32 @@ function renderPapers() {
     papers
       .map((p) => `<option value="${p.paper_id}">${escapeHtml(p.title)}</option>`)
       .join("");
-  scopeSelect.value = current;
+  // Keep the previous selection only if that paper still exists.
+  scopeSelect.value = papers.some((p) => p.paper_id === current) ? current : "";
 }
+
+paperList.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".p-remove");
+  if (!btn) return;
+
+  const paperId = btn.dataset.paperId;
+  const paper = papers.find((p) => p.paper_id === paperId);
+  const label = paper ? paper.title : "this paper";
+
+  if (!confirm(`Remove "${label}"? This can't be undone.`)) return;
+
+  btn.disabled = true;
+  try {
+    const res = await fetch(`/api/papers/${paperId}`, { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Delete failed");
+    await refreshPapers();
+  } catch (err) {
+    uploadStatus.textContent = err.message;
+    uploadStatus.className = "status-line error";
+    btn.disabled = false;
+  }
+});
 
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
