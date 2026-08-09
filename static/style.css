@@ -354,3 +354,38 @@ button, input, select { font-family: inherit; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* ---- paper row with remove button ---- */
+.p-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.p-remove {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  line-height: 1;
+  font-size: 14px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .15s ease, color .15s ease;
+}
+
+.p-remove:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.p-remove:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
