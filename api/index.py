@@ -28,11 +28,18 @@ app = Flask(
 # (and their papers becoming "invisible") unpredictably.
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(32)
 
+# Keep each device's document space around long-term instead of resetting
+# every time the browser closes. This doesn't change privacy - it's still
+# one cookie per device/browser, so different devices never see each
+# other's papers - it just makes that cookie last a year instead of a tab.
+app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 24 * 365  # 1 year
+
 
 @app.before_request
 def ensure_session():
     """No login required - just silently give each new browser its own
-    private document space, scoped to this session cookie."""
+    private, long-lived document space, scoped to this session cookie."""
+    session.permanent = True
     if "owner_id" not in session:
         session["owner_id"] = str(uuid.uuid4())
 
