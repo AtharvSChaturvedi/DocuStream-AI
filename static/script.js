@@ -49,7 +49,6 @@ function renderPapers() {
     papers
       .map((p) => `<option value="${p.paper_id}">${escapeHtml(p.title)}</option>`)
       .join("");
-  // Keep the previous selection only if that paper still exists.
   scopeSelect.value = papers.some((p) => p.paper_id === current) ? current : "";
 }
 
@@ -148,9 +147,22 @@ askForm.addEventListener("submit", async (e) => {
 
     block.innerHTML = `
       <div class="q-line">${escapeHtml(question)}</div>
-      <div class="a-text">${answerHtml}</div>
-      ${sourcesHtml}
+      <div class="a-text typing"></div>
     `;
+    const answerEl = block.querySelector(".a-text");
+
+    await typeHtml(answerEl, answerHtml);
+    answerEl.classList.remove("typing");
+
+    if (sourcesHtml) {
+      const sourcesEl = document.createElement("div");
+      sourcesEl.innerHTML = sourcesHtml;
+      sourcesEl.style.opacity = "0";
+      block.appendChild(sourcesEl.firstElementChild);
+      requestAnimationFrame(() => {
+        block.querySelector(".sources").style.opacity = "1";
+      });
+    }
   } catch (e) {
     block.innerHTML = `
       <div class="q-line">${escapeHtml(question)}</div>
@@ -161,6 +173,42 @@ askForm.addEventListener("submit", async (e) => {
     thread.scrollTop = thread.scrollHeight;
   }
 });
+
+function typeHtml(el, html, charsPerTick = 2, delayMs = 12) {
+  return new Promise((resolve) => {
+    el.innerHTML = "";
+    let i = 0;
+
+    function step() {
+      if (i >= html.length) {
+        resolve();
+        return;
+      }
+
+      if (html[i] === "<") {
+        const close = html.indexOf(">", i);
+        if (close === -1) {
+          el.innerHTML += html.slice(i);
+          i = html.length;
+        } else {
+          el.innerHTML += html.slice(i, close + 1);
+          i = close + 1;
+        }
+      } else {
+        const nextTag = html.indexOf("<", i);
+        const end = nextTag === -1 ? html.length : nextTag;
+        const chunkEnd = Math.min(i + charsPerTick, end);
+        el.innerHTML += html.slice(i, chunkEnd);
+        i = chunkEnd;
+      }
+
+      thread.scrollTop = thread.scrollHeight;
+      setTimeout(step, delayMs);
+    }
+
+    step();
+  });
+}
 
 function formatAnswer(text) {
   const escaped = escapeHtml(text);
