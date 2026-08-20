@@ -20,7 +20,7 @@ from app.chroma_client import get_collection
 from app.pdf_utils import extract_pages, chunk_pages
 
 groq_client = Groq(api_key=os.environ["GROQ_API_KEY"])
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
 
 SYSTEM_PROMPT = (
     "You are a careful research assistant. Answer the user's question using "
