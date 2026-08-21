@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from app.rag import ingest_pdf, answer_question, list_papers, delete_paper  # noqa: E402
+from app.readiness import check_readiness  # noqa: E402
 
 app = Flask(
     __name__,
@@ -92,6 +93,17 @@ def remove_paper(paper_id):
     try:
         delete_paper(session["owner_id"], paper_id)
         return jsonify({"deleted": paper_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/papers/<paper_id>/readiness", methods=["POST"])
+def readiness(paper_id):
+    data = request.get_json(silent=True) or {}
+    title = data.get("title", "this paper")
+    try:
+        result = check_readiness(session["owner_id"], paper_id, title)
+        return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
