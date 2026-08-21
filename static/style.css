@@ -150,9 +150,7 @@ button, input, select { font-family: inherit; }
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  flex: 1;
-  min-height: 40px;
+  gap: 10px;
 }
 
 .catalog-list .empty-note {
@@ -409,4 +407,133 @@ button, input, select { font-family: inherit; }
 
 .sources {
   transition: opacity .35s ease;
+}
+
+/* ---- IEEE readiness check ---- */
+.p-readiness-btn {
+  width: 100%;
+  margin-top: 8px;
+  background: none;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--teal);
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+
+.p-readiness-btn:hover {
+  border-color: var(--teal);
+  background: #EAF1EE;
+}
+
+.p-readiness-btn:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+.readiness-panel {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+
+.readiness-score-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.readiness-score-num {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 26px;
+  color: var(--navy);
+  flex-shrink: 0;
+}
+
+.readiness-score-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.readiness-disclaimer {
+  display: block;
+  text-transform: none;
+  letter-spacing: normal;
+  font-style: italic;
+  margin-top: 2px;
+  font-size: 10px;
+}
+
+.crit-list { display: flex; flex-direction: column; gap: 6px; }
+
+.crit-row {
+  display: grid;
+  grid-template-columns: 92px 1fr 32px;
+  align-items: center;
+  gap: 6px;
+}
+
+.crit-label {
+  font-size: 10.5px;
+  color: var(--ink-soft);
+}
+
+.crit-bar-track {
+  height: 5px;
+  background: var(--paper);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.crit-bar-fill {
+  height: 100%;
+  background: var(--teal);
+  border-radius: 3px;
+}
+
+.crit-score {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-soft);
+  text-align: right;
+}
+
+.crit-feedback {
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  margin: 0 0 6px;
+  line-height: 1.4;
+}
+
+.rlist-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.rlist-head {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--navy);
+  margin-bottom: 2px;
+}
+
+.rlist ul {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  line-height: 1.5;
 }
