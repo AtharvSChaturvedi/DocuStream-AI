@@ -30,7 +30,7 @@ function renderPapers() {
     paperList.innerHTML = papers
       .map(
         (p) => `
-      <li class="paper-card">
+      <li class="paper-card" data-paper-id="${p.paper_id}">
         <div class="p-row">
           <div>
             <div class="p-title">${escapeHtml(p.title)}</div>
@@ -38,6 +38,10 @@ function renderPapers() {
           </div>
           <button class="p-remove" data-paper-id="${p.paper_id}" title="Remove this paper">&times;</button>
         </div>
+        <button class="p-readiness-btn" data-paper-id="${p.paper_id}" data-title="${escapeHtml(p.title)}">
+          Check readiness
+        </button>
+        <div class="readiness-panel" data-panel-for="${p.paper_id}" hidden></div>
       </li>`
       )
       .join("");
@@ -53,27 +57,102 @@ function renderPapers() {
 }
 
 paperList.addEventListener("click", async (e) => {
-  const btn = e.target.closest(".p-remove");
-  if (!btn) return;
+  const removeBtn = e.target.closest(".p-remove");
+  if (removeBtn) {
+    const paperId = removeBtn.dataset.paperId;
+    const paper = papers.find((p) => p.paper_id === paperId);
+    const label = paper ? paper.title : "this paper";
+    if (!confirm(`Remove "${label}"? This can't be undone.`)) return;
 
-  const paperId = btn.dataset.paperId;
-  const paper = papers.find((p) => p.paper_id === paperId);
-  const label = paper ? paper.title : "this paper";
+    removeBtn.disabled = true;
+    try {
+      const res = await fetch(`/api/papers/${paperId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Delete failed");
+      await refreshPapers();
+    } catch (err) {
+      uploadStatus.textContent = err.message;
+      uploadStatus.className = "status-line error";
+      removeBtn.disabled = false;
+    }
+    return;
+  }
 
-  if (!confirm(`Remove "${label}"? This can't be undone.`)) return;
-
-  btn.disabled = true;
-  try {
-    const res = await fetch(`/api/papers/${paperId}`, { method: "DELETE" });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Delete failed");
-    await refreshPapers();
-  } catch (err) {
-    uploadStatus.textContent = err.message;
-    uploadStatus.className = "status-line error";
-    btn.disabled = false;
+  const readinessBtn = e.target.closest(".p-readiness-btn");
+  if (readinessBtn) {
+    await runReadinessCheck(readinessBtn);
   }
 });
+
+async function runReadinessCheck(btn) {
+  const paperId = btn.dataset.paperId;
+  const title = btn.dataset.title;
+  const panel = paperList.querySelector(`.readiness-panel[data-panel-for="${paperId}"]`);
+
+  btn.disabled = true;
+  btn.textContent = "Reviewing\u2026";
+  panel.hidden = false;
+  panel.innerHTML = `<div class="loading-dot">Reading like an reviewer\u2026</div>`;
+
+  try {
+    const res = await fetch(`/api/papers/${paperId}/readiness`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Readiness check failed");
+
+    panel.innerHTML = renderReadiness(data);
+  } catch (err) {
+    panel.innerHTML = `<div class="a-text" style="color:var(--accent)">${escapeHtml(err.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Re-check readiness";
+  }
+}
+
+function renderReadiness(data) {
+  const barsHtml = data.criteria
+    .map(
+      (c) => `
+    <div class="crit-row">
+      <div class="crit-label">${escapeHtml(c.label)}</div>
+      <div class="crit-bar-track">
+        <div class="crit-bar-fill" style="width:${c.score * 10}%"></div>
+      </div>
+      <div class="crit-score">${c.score}/10</div>
+    </div>
+    <div class="crit-feedback">${escapeHtml(c.feedback)}</div>`
+    )
+    .join("");
+
+  const strengthsHtml = data.top_strengths.length
+    ? `<div class="rlist">
+         <div class="rlist-head">Strengths</div>
+         <ul>${data.top_strengths.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>
+       </div>`
+    : "";
+
+  const improvementsHtml = data.top_improvements.length
+    ? `<div class="rlist">
+         <div class="rlist-head">Improve before submitting</div>
+         <ul>${data.top_improvements.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>
+       </div>`
+    : "";
+
+  return `
+    <div class="readiness-score-row">
+      <div class="readiness-score-num">${data.readiness_score}%</div>
+      <div class="readiness-score-label">
+        Readiness Score
+        <span class="readiness-disclaimer">Heuristic estimate against common review criteria &mdash; not a guarantee of acceptance.</span>
+      </div>
+    </div>
+    <div class="crit-list">${barsHtml}</div>
+    <div class="rlist-grid">${strengthsHtml}${improvementsHtml}</div>
+  `;
+}
 
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
